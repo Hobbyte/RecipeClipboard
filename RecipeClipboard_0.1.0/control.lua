@@ -2,8 +2,6 @@
   ingredients = {}
   item = ""
   debug = false
-  defaultInserterLimit = 5
-  defaultIngredientRatio = 2
   function dbg(s)
     if debug then game.player.print(game.tick .. ": " .. s) end
   end
@@ -34,15 +32,28 @@
           createButton('Copy Build Requirements', 'copyButton')
         end
       elseif game.player.opened.name == 'logistic-chest-requester' then
-        if not getBtn('pasteButton') then
-          dbg(' + Paste Button')
-           createButton('Paste Build Requirements', 'pasteButton')
+        if not getBtn('pasteButton2') then
+          dbg(' + Paste Button2')
+           createButton('Paste 2', 'pasteButton2')
+        end
+		if not getBtn('pasteButton10') then
+          dbg(' + Paste Button10')
+           createButton('Paste 10', 'pasteButton10')
         end
       elseif game.player.opened.type == 'inserter' then
-        if not getBtn('pasteButton') then
-          if string.find(game.player.opened.name, "smart") then
-            createButton('Paste Build Requirements', 'pasteButton')
-          end
+		if string.find(game.player.opened.name, "smart") then
+			if not getBtn('pasteButton1') then
+				createButton('Paste 1', 'pasteButton1')
+			end
+			if not getBtn('pasteButton5') then
+				createButton('Paste 5', 'pasteButton5')
+			end
+			if not getBtn('pasteButton10') then
+				createButton('Paste 10', 'pasteButton10')
+			end
+			if not getBtn('pasteButton50') then
+				createButton('Paste 50', 'pasteButton50')
+			end
         end
       end
     else
@@ -50,12 +61,74 @@
         dbg(' - Copy Button')
         getBtn('copyButton').destroy()
       end
-      if getBtn('pasteButton')  then
-        dbg(' - Paste Button')
-          getBtn('pasteButton').destroy()
+      if getBtn('pasteButton1')  then
+        dbg(' - Paste Button1')
+          getBtn('pasteButton1').destroy()
+      end
+	  if getBtn('pasteButton2')  then
+        dbg(' - Paste Button2')
+          getBtn('pasteButton2').destroy()
+      end
+	  if getBtn('pasteButton5')  then
+        dbg(' - Paste Button5')
+          getBtn('pasteButton5').destroy()
+      end
+	  if getBtn('pasteButton10')  then
+        dbg(' - Paste Button10')
+          getBtn('pasteButton10').destroy()
+      end
+	  if getBtn('pasteButton50')  then
+        dbg(' - Paste Button50')
+          getBtn('pasteButton50').destroy()
       end
     end
   end)
+
+function pasteNum(num)
+	pcall(function()
+        if game.player.opened.type == 'inserter' then
+          pasteInserter(num)
+        else
+          local s = 0
+		  local newIngredients = {}
+		  
+          for _,_ in pairs(ingredients) do s = s + 1 end
+		  for k,v in pairs(ingredients) do
+			newIngredients[k] = {name = v['name'], count = v['count'] * num}
+		  end
+		  dbg('ingredients:')
+          listSlots(ingredients)
+          for i=1,10 do
+            local slot = game.player.opened.getrequestslot(i)
+            if slot ~= nil then
+              local n = slot['name']
+              if ingredients[n] ~= nil then
+				
+                dbg('Updating item count [' .. n .. '] ' .. serpent.block(slot))
+				newIngredients[n]['count'] = newIngredients[n]['count'] + slot['count']
+              else
+                newIngredients[n] = slot
+              end
+            end
+          end
+		  dbg('newIngredients:')
+          listSlots(newIngredients)
+          local i = 1
+          for _,e in pairs(newIngredients) do
+            game.player.opened.setrequestslot(e,i)
+            i = i + 1
+            if i > 10 then
+              break
+            end
+          end
+        end
+      end)
+end
+function pasteInserter(num)
+	if string.find(game.player.opened.name, "smart") then
+		game.player.opened.setcircuitcondition {circuit = defines.circuitconnector.logistic, name = item, count = num, operator = "<"}
+	end
+end
 
   game.onevent(defines.events.onguiclick, function(event)
     if (event.element.name == 'copyButton') then
@@ -67,45 +140,26 @@
           listSlots(x)
           if x['type'] then
             if x['type'] == 0 then
-              ingredients[x['name']] = {name = x['name'], count = x['amount']* defaultIngredientRatio}
+              ingredients[x['name']] = {name = x['name'], count = x['amount']}
               dbg('Added [' .. serpent.block(x) .. ']')
             end
           end
         end
       end)
     end
-    if (event.element.name == 'pasteButton') then
-      pcall(function()
-        if game.player.opened.type == 'inserter' then
-          if string.find(game.player.opened.name, "smart") then
-            game.player.opened.setcircuitcondition {circuit = defines.circuitconnector.logistic, name = item, count = defaultInserterLimit, operator = "<"}
-          end
-        else
-          local s = 0
-          for _,_ in pairs(ingredients) do s = s + 1 end
-          listSlots(ingredients)
-          for i=1,10 do
-            local slot = game.player.opened.getrequestslot(i)
-            if slot ~= nil then
-              local n = slot['name']
-              if ingredients[n] ~= nil then
-                dbg('Updating item count [' .. n .. '] ' .. serpent.block(slot))
-                ingredients[n]['count'] = ingredients[n]['count'] + slot['count']
-              else
-                ingredients[n] = slot
-              end
-            end
-          end
-          listSlots(ingredients)
-          local i = 1
-          for _,e in pairs(ingredients) do
-            game.player.opened.setrequestslot(e,i)
-            i = i + 1
-            if i > 10 then
-              break
-            end
-          end
-        end
-      end)
-    end 
+	if (event.element.name == 'pasteButton1') then
+		pasteNum(1)
+	end
+    if (event.element.name == 'pasteButton2') then
+		pasteNum(2)
+	end
+	if (event.element.name == 'pasteButton5') then
+		pasteNum(5)
+	end
+	if (event.element.name == 'pasteButton10') then
+		pasteNum(10)
+	end
+	if (event.element.name == 'pasteButton50') then
+		pasteNum(50)
+	end
   end)
